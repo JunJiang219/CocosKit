@@ -21,6 +21,7 @@ CocosKit 分为三类能力：
 - 首包只放启动必需内容，其余功能和资源按需加载。
 - **代码模块不等于 Asset Bundle**：模块负责划分代码职责，Bundle 负责划分加载、发布和卸载边界。
 - 通用能力默认作为 `kit-core` 内部模块组织，只有确有独立加载价值时才拆分 Bundle。
+- 项目业务与项目内容初期统一放入 `game-core`，先按目录保持边界；只有出现明确的独立加载、更新、卸载或发布需求时才拆分 Bundle。
 - 优先使用简单明确的设计，不为了“以后可能用到”提前堆叠抽象。
 
 ## 2. 总体分层
@@ -30,8 +31,8 @@ flowchart TB
     Main[main 启动层<br/>首场景 / 启动配置 / BundleLoader]
     Core[kit-core 通用框架 Bundle<br/>Assets / UI / Audio / Net / Data...]
     Genre[类型框架 Bundle<br/>RPG / Card / Match3 / SLG...]
-    Game[项目业务 Bundle<br/>game-core / game-feature-*]
-    Content[内容 Bundle<br/>关卡 / 角色 / 活动 / 语言包...]
+    Game[项目 Bundle<br/>game-core：业务 + 内容]
+    Split[按需拆出的项目 Bundle<br/>战斗 / 活动 / 章节 / 语言包...]
     Optional[少量可选 Bundle<br/>Debug / 平台 SDK / 大型独立能力]
 
     Main --> Core
@@ -40,12 +41,12 @@ flowchart TB
     Core --> Genre
     Genre --> Game
     Core --> Game
-    Game --> Content
+    Game --> Split
     Core --> Optional
     Optional --> Game
 ```
 
-允许的依赖方向为“上层依赖下层”。通用能力先在 `kit-core` 内按目录划分模块，不为了代码分类而拆 Bundle。确实需要共享的内容应下沉到更基础的层级，而不是建立交叉引用。
+允许的依赖方向为“上层依赖下层”。通用能力先在 `kit-core` 内按目录划分模块，项目业务和内容先在 `game-core` 内按目录划分，不为了代码分类而拆 Bundle。确实需要共享的内容应下沉到更基础的层级，而不是建立交叉引用。
 
 ## 3. Bundle 规划
 
@@ -71,9 +72,11 @@ flowchart LR
     B --> C[加载 kit-core]
     C --> D[创建框架上下文并初始化通用模块]
     D --> E[加载选定类型框架]
-    E --> F[加载 game-core]
-    F --> G[按需加载内容 Bundle]
-    G --> H[进入登录或主场景]
+    E --> F[加载 game-core<br/>业务与首期内容]
+    F --> G{是否存在已拆出的<br/>必需项目 Bundle}
+    G -->|是| H[加载对应 Bundle]
+    G -->|否| I[进入登录或主场景]
+    H --> I
 ```
 
 ### 3.2 通用内核：`kit-core`
@@ -94,7 +97,7 @@ flowchart LR
 | `log` | 分级日志、标签、输出适配 | 正式环境可以裁剪调试日志 |
 | `utils` | 纯函数工具 | 仅收纳高复用能力，禁止成为杂物箱 |
 
-`kit-core` 可以包含少量真正通用的默认预制体和配置，但不建议放入大型图片、成批音频、平台 SDK、具体游戏数据及某一种玩法规则。大体积内容仍应放入独立内容 Bundle。
+`kit-core` 可以包含少量真正通用的默认预制体和配置，但不建议放入大型图片、成批音频、平台 SDK、具体游戏数据及某一种玩法规则。项目内容默认归入 `game-core`；当体积、加载、更新或卸载需求达到 3.4 的判断标准时，再拆为独立项目 Bundle。
 
 ### 3.3 `kit-core` 内部功能模块
 
@@ -235,18 +238,63 @@ flowchart LR
 
 ### 3.6 项目业务与内容 Bundle
 
-框架项目最终落地到具体游戏时，建议使用以下命名：
+具体游戏接入时，**项目业务与项目内容先统一放入一个 `game-core` Bundle**。登录、主流程、玩法实现、项目 UI、关卡、角色、音频和本地化资源先按目录划分职责，不在项目初期创建多个 Asset Bundle。
 
-- `game-core`：项目规则、业务服务、登录和主流程。
-- `game-ui`：只有界面资源需要独立加载或卸载时才创建，否则并入 `game-core`。
-- `game-battle`：项目战斗实现，若战斗可独立加载。
-- `game-feature-<名称>`：可单独上线或下线的系统，例如公会、活动。
-- `content-common`：频繁复用且必须常驻的项目公共资源。
-- `content-level-<章节>`：关卡或章节内容。
-- `content-character-<分组>`：角色及其大体积资源。
-- `content-locale-<语言>`：特定语言资源。
+推荐的包内组织如下：
 
-内容 Bundle 应避免直接持有业务单例；它负责提供资产和配置，业务 Bundle 负责解释和使用这些内容。
+```text
+game-core/
+├─ scripts/                              # 项目规则、业务服务和流程
+│  ├─ login/
+│  ├─ lobby/
+│  ├─ battle/
+│  └─ level/
+├─ configs/                              # 跨功能使用的项目全局配置
+└─ content/                              # 全部项目资源，仅是目录边界
+   ├─ shared/                            # 多个功能真正复用的资源
+   │  ├─ prefabs/
+   │  ├─ textures/
+   │  └─ fonts/
+   ├─ login/
+   │  ├─ scenes/
+   │  ├─ prefabs/
+   │  └─ textures/
+   ├─ lobby/
+   │  ├─ scenes/
+   │  ├─ prefabs/
+   │  └─ audio/
+   ├─ battle/
+   │  ├─ scenes/
+   │  ├─ prefabs/
+   │  ├─ effects/
+   │  └─ audio/
+   ├─ levels/
+   │  └─ level-001/
+   │     ├─ level.scene
+   │     ├─ level.json
+   │     └─ textures/
+   ├─ characters/
+   └─ locales/
+```
+
+这里的 `content` 只是 `game-core` 内部目录，不是独立 Bundle。资源采用“功能模块优先、资源类型次级”的组织方式，例如 `content/battle/prefabs`，不再同时设置顶层 `scenes`、`prefabs` 等目录。同一功能的场景、预制体、贴图、音频和特效放在一起，便于按功能查找、加载、释放以及后续整体拆包。
+
+模块目录应对应登录、大厅、战斗、关卡、活动等较稳定的加载或生命周期边界，不为每个小业务概念单独建目录。`shared` 只接收确实被多个模块复用、生命周期长于单个模块且无法明确归属的资源，禁止成为杂物目录。
+
+TypeScript 代码统一放在 `scripts/<模块>`，不放入 `content`。仅属于某个内容单元的数据跟随该内容存放，例如 `content/levels/level-001/level.json`；跨多个功能使用的项目全局配置放在顶层 `configs`。业务代码可以直接解释和使用同包内容，但仍应通过资源管理模块统一加载和释放，避免在业务代码中散落资源路径。
+
+只有满足 3.4 的判断标准，并且收益大于跨包依赖与发布成本时，才从 `game-core` 拆出 Bundle。拆分后可按实际职责命名：
+
+| 候选 Bundle | 何时才拆分 |
+| --- | --- |
+| `game-ui` | 界面资源体积较大，且需要独立加载或卸载 |
+| `game-battle` | 战斗代码与资源可以在进出战斗时整体加载和释放 |
+| `game-feature-<名称>` | 功能需要独立上线、下线或版本发布，例如公会、活动 |
+| `content-level-<章节>` | 章节需要远程下载、分批发布或通关后释放 |
+| `content-character-<分组>` | 角色资源体积较大，且可按分组下载或卸载 |
+| `content-locale-<语言>` | 语言资源需要按用户选择下载和切换 |
+
+拆分不是单向决定：如果拆出的 Bundle 没有形成独立加载、更新、卸载或发布边界，应合回 `game-core`。对于已经拆出的纯内容 Bundle，它只提供资产和配置，不直接持有业务单例；`game-core` 负责解释和使用内容。
 
 ## 4. 推荐目录结构
 
@@ -301,12 +349,39 @@ CocosKit/
 │  │  ├─ genre-match3/
 │  │  ├─ genre-slg/
 │  │  │
-│  │  ├─ game-core/                      # 具体游戏接入后创建
+│  │  ├─ game-core/                      # 默认唯一项目 Bundle：业务与内容
+│  │  │  ├─ scripts/                     # 按功能模块组织代码
+│  │  │  │  ├─ login/
+│  │  │  │  ├─ lobby/
+│  │  │  │  ├─ battle/
+│  │  │  │  └─ level/
+│  │  │  ├─ configs/                     # 跨功能使用的项目全局配置
+│  │  │  └─ content/
+│  │  │     ├─ shared/
+│  │  │     │  ├─ prefabs/
+│  │  │     │  ├─ textures/
+│  │  │     │  └─ fonts/
+│  │  │     ├─ login/
+│  │  │     │  ├─ scenes/
+│  │  │     │  ├─ prefabs/
+│  │  │     │  └─ textures/
+│  │  │     ├─ lobby/
+│  │  │     │  ├─ scenes/
+│  │  │     │  ├─ prefabs/
+│  │  │     │  └─ audio/
+│  │  │     ├─ battle/
+│  │  │     │  ├─ scenes/
+│  │  │     │  ├─ prefabs/
+│  │  │     │  ├─ effects/
+│  │  │     │  └─ audio/
+│  │  │     ├─ levels/
+│  │  │     ├─ characters/
+│  │  │     └─ locales/
+│  │  │
 │  │  ├─ game-battle/                    # 仅在需要独立加载时创建
 │  │  ├─ game-feature-example/           # 仅在需要独立发布或卸载时创建
-│  │  ├─ content-common/
-│  │  ├─ content-level-example/
-│  │  └─ content-locale-zh-cn/
+│  │  ├─ content-level-example/           # 仅在需要远程下载或分批发布时创建
+│  │  └─ content-locale-zh-cn/            # 仅在需要按语言下载时创建
 │  │
 │  └─ shared-editor/                     # 只供编辑器识别、不进入运行时依赖的资产
 │
@@ -332,11 +407,11 @@ CocosKit/
 └─ tsconfig.json
 ```
 
-上面的 `genre-*`、`game-*` 和 `content-*` 目录是候选清单，不需要立即全部创建。通用能力默认全部收纳在 `kit-core` 中，仅通过 `scripts` 下的子目录保持模块边界。第一阶段只创建真正准备实现的目录，避免空目录和无效 Bundle 增加维护成本。
+上面的 `genre-*`、`game-battle`、`game-feature-*` 和 `content-*` 目录是候选清单，不需要立即全部创建。通用能力默认全部收纳在 `kit-core` 中；项目业务和内容默认全部收纳在 `game-core` 中，分别通过包内目录保持边界。第一阶段只创建真正准备实现的目录，避免空目录和无效 Bundle 增加维护成本。
 
 ### 4.1 单个 Bundle 的内部模板
 
-Bundle 内部与 `kit-core` 使用相同的组织方式：`scripts` 下直接按功能模块命名，不采用 `domain`、`application`、`infrastructure`、`presentation` 这类技术分层目录。
+Bundle 的代码与 `kit-core` 使用相同的组织方式：`scripts` 下直接按功能模块命名，不采用 `domain`、`application`、`infrastructure`、`presentation` 这类技术分层目录。`game-core` 的资源则遵循 3.6 的约定，统一放在 `content` 下，并按“功能模块优先、资源类型次级”组织。
 
 以 RPG 类型框架为例：
 
@@ -397,10 +472,10 @@ stateDiagram-v2
 
 1. 每个独立 Bundle 必须声明直接依赖，加载器先完成依赖再启动当前模块。
 2. 禁止 Bundle 循环依赖；`kit-core` 内部模块的循环依赖同样需要消除。
-3. `kit-core` 不引用类型、项目或内容 Bundle 的资源和脚本。
+3. `kit-core` 不引用类型、项目或已拆分内容 Bundle 的资源和脚本。
 4. 类型框架只依赖 `kit-core`，以及极少数经过确认的可选基础 Bundle。
 5. 项目 Bundle 可以依赖一种类型框架，但类型框架不能引用项目内容。
-6. 内容 Bundle 原则上不依赖业务 Bundle；共享资产尽量下沉到 `content-common`。
+6. 从 `game-core` 拆出的纯内容 Bundle 原则上不依赖业务 Bundle；多个已拆分 Bundle 共享的资产，应根据实际生命周期保留在 `game-core`，或在确有独立边界时再提取公共内容 Bundle。
 7. 跨 Bundle 通信优先使用 `contracts` 中的接口或事件，不直接查找对方内部组件。
 8. `kit-core` 内部模块使用普通 TypeScript 依赖，不为它们维护额外的 Bundle 加载顺序。
 
@@ -429,7 +504,9 @@ stateDiagram-v2
 - Bundle 名称统一使用小写短横线，例如 `kit-core`、`genre-card`、`content-level-01`。
 - 资源路径使用小写目录，文件名采用团队统一规则；不要依赖文件名大小写差异。
 - 跨 Bundle 公共资源必须明确归属，禁止随手复制到多个 Bundle。
-- 大图、音频、视频、字体和骨骼动画优先放入可独立下载的内容 Bundle。
+- 大图、音频、视频、字体和骨骼动画先放入 `game-core/content`；当它们明显影响首包、需要远程下载或可以整体卸载时，再拆入独立内容 Bundle。
+- `game-core/content` 按功能模块划分一级目录，再在模块内部使用 `scenes`、`prefabs`、`textures`、`audio` 等资源类型目录；不在 `game-core` 顶层重复建立同名资源目录。
+- `content/shared` 只存放被多个功能复用且无法明确归属的资源，能归属于具体功能的资源不得提前放入 `shared`。
 - 动态加载资源使用稳定的逻辑路径或资源键，不在业务中散落字符串路径。
 - Prefab 只引用当前 Bundle 或已声明依赖 Bundle 中的资源。
 - 主包资源不得反向引用可选 Bundle，否则会破坏按需加载边界。
