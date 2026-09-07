@@ -1,5 +1,6 @@
 import { BundleCatalog } from '../../assets/main/scripts/BundleCatalog';
 import { LaunchPipeline } from '../../assets/main/scripts/LaunchPipeline';
+import { createAssetLoadProgress } from '../../assets/bundles/kit-core/scripts/assets/AssetLoadOptions';
 import {
     FrameworkModule,
     ModuleContext,
@@ -115,6 +116,15 @@ async function testFlowStateSurvivesSceneDisposal(): Promise<void> {
     assert(shutdownCalled, '跨场景流程不应再读取已销毁组件上的对象字段');
 }
 
+async function testAssetProgressNormalization(): Promise<void> {
+    const itemProgress = createAssetLoadProgress(2, 4, 'items');
+    assert(itemProgress.ratio === 0.5, '资源项进度应转换成 0～1 比例');
+
+    const byteProgress = createAssetLoadProgress(2048, 1024, 'bytes');
+    assert(byteProgress.ratio === 1, '超出总量的字节进度应限制为 1');
+    assert(byteProgress.unit === 'bytes', '远程下载应保留字节单位');
+}
+
 /** 不依赖测试框架的最小集成测试入口。 */
 async function run(): Promise<void> {
     await testBundleOrder();
@@ -122,6 +132,7 @@ async function run(): Promise<void> {
     await testModuleLifecycle();
     await testLaunchPipelineRetry();
     await testFlowStateSurvivesSceneDisposal();
+    await testAssetProgressNormalization();
     console.info('phase-one integration tests passed');
 }
 

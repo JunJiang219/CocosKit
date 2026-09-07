@@ -105,7 +105,8 @@ flowchart LR
 
 #### `assets`：资源管理
 
-- Asset、Prefab、Scene、SpriteFrame 等资源的统一加载接口。
+- Asset、Prefab、Scene、SpriteFrame 等资源的单个、批量和目录加载接口。
+- 远程资源加载，以及资源项或下载字节的标准化进度回调。
 - Bundle 内资源路径约定和类型安全校验。
 - 引用计数、资源作用域和批量释放。
 - 预加载、加载队列、并发数、失败重试和进度汇总。

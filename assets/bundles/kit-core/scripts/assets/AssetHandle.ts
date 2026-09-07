@@ -1,12 +1,14 @@
 import { Asset } from 'cc';
 
+export type AssetReleaseCallback<T extends Asset> = (handle: AssetHandle<T>) => void;
+
 /** 单个资源引用句柄，释放操作幂等。 */
 export class AssetHandle<T extends Asset> {
     private released = false;
 
     public constructor(
         public readonly asset: T,
-        private readonly onRelease: () => void,
+        private readonly onRelease: AssetReleaseCallback<T>,
     ) {
         this.asset.addRef();
     }
@@ -18,6 +20,6 @@ export class AssetHandle<T extends Asset> {
         }
         this.released = true;
         this.asset.decRef();
-        this.onRelease();
+        this.onRelease(this);
     }
 }
