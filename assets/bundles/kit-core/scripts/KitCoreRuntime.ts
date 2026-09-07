@@ -1,0 +1,63 @@
+import { AssetService } from './assets/AssetService';
+import { AssetsModule } from './assets/AssetsModule';
+import { ModuleContext } from './contracts/CoreContracts';
+import { EventBus } from './event/EventBus';
+import { KitCoreFacade } from './KitCoreFacade';
+import { Logger } from './log/Logger';
+import { ModuleManager } from './module/ModuleManager';
+import { SceneModule } from './scene/SceneModule';
+import { SceneService } from './scene/SceneService';
+import { ServiceContainer } from './service/ServiceContainer';
+import { KIT_SERVICE_KEYS } from './service/KitServiceKeys';
+
+/** 组装阶段一内核模块，并通过门面对启动层隐藏内部结构。 */
+export class KitCoreRuntime implements KitCoreFacade {
+    private readonly services = new ServiceContainer();
+    private readonly events = new EventBus();
+    private readonly logger = new Logger('kit-core');
+    private readonly modules: ModuleManager;
+    private booted = false;
+
+    public constructor() {
+        const context: ModuleContext = {
+            services: this.services,
+            events: this.events,
+            logger: this.logger,
+        };
+        this.modules = new ModuleManager(context);
+        this.modules.add(new AssetsModule());
+        this.modules.add(new SceneModule());
+    }
+
+    /** 暴露场景门面，不暴露服务容器本身。 */
+    public get scenes(): SceneService {
+        return this.services.resolve<SceneService>(KIT_SERVICE_KEYS.scenes);
+    }
+
+    /** 启动全部内核模块，重复调用不会重复注册。 */
+    public async boot(): Promise<void> {
+        if (this.booted) {
+            return;
+        }
+        await this.modules.boot();
+        this.booted = true;
+        this.logger.info('通用模块初始化完成');
+    }
+
+    /** 按依赖反序销毁模块、事件和服务。 */
+    public async shutdown(): Promise<void> {
+        if (!this.booted) {
+            return;
+        }
+        await this.modules.shutdown();
+        this.events.clear();
+        this.services.clear();
+        this.booted = false;
+        this.logger.info('通用模块已释放');
+    }
+
+    /** 供后续模块内部使用的资源服务入口。 */
+    public get assets(): AssetService {
+        return this.services.resolve<AssetService>(KIT_SERVICE_KEYS.assets);
+    }
+}

@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": "..",
+    "outDir": "../temp/phase-one-tests"
+  },
+  "include": [
+    "integration/phase-one.test.ts",
+    "../assets/main/scripts/BundleCatalog.ts",
+    "../assets/main/scripts/LaunchPipeline.ts",
+    "../assets/bundles/kit-core/scripts/contracts/CoreContracts.ts",
+    "../assets/bundles/kit-core/scripts/event/EventBus.ts",
+    "../assets/bundles/kit-core/scripts/module/ModuleManager.ts",
+    "../assets/bundles/kit-core/scripts/service/ServiceContainer.ts"
+  ]
+}

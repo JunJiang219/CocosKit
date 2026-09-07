@@ -1,7 +1,7 @@
 # CocosKit 通用游戏开发框架规划
 
 > 适用版本：Cocos Creator 3.8.8  
-> 当前阶段：架构规划，暂不包含代码实现  
+> 当前阶段：阶段一实施，已建立最小加载与释放闭环
 > 目标：建立一套可复用、可裁剪、可按需加载，并能继续扩展游戏类型框架的开发底座。
 
 ## 1. 建设目标
@@ -621,15 +621,23 @@ configs/
 ```text
 assets/
 ├─ main/
+│  ├─ scenes/
+│  │  └─ launch.scene
+│  └─ scripts/
 └─ bundles/
-   └─ kit-core/
-      └─ scripts/
-         ├─ assets/
-         ├─ scene/
-         ├─ module/
-         ├─ service/
-         ├─ event/
-         └─ log/
+   ├─ kit-core/
+   │  └─ scripts/
+   │     ├─ assets/
+   │     ├─ scene/
+   │     ├─ module/
+   │     ├─ service/
+   │     ├─ event/
+   │     └─ log/
+   └─ game-core/                         # 仅放阶段一闭环所需的最小示例
+      └─ content/
+         └─ demo/
+            └─ scenes/
+               └─ demo.scene
 
 docs/
 tests/
@@ -638,9 +646,9 @@ tests/
 
 待最小闭环通过后，再在 `kit-core/scripts` 中逐个增加 `ui`、`data`、`storage` 等模块。只有模块出现独立下载、更新、卸载或平台隔离需求时，才从 `kit-core` 拆成单独 Bundle。游戏类型未确定前，仅保留本规划中的命名和边界，不创建空的 `genre-*` 目录。
 
-## 13. 编码前待确认事项
+## 13. 后续阶段待确认事项
 
-以下信息会直接影响下一阶段设计，开始编码前需要明确：
+以下信息不影响阶段一最小闭环，但进入对应功能实现前需要明确：
 
 1. 首个目标平台：Web、Android/iOS、微信小游戏或多平台。
 2. 是否需要远程 Bundle，以及是否需要原生热更新。

@@ -1,7 +1,7 @@
 [
   {
     "__type__": "cc.SceneAsset",
-    "_name": "app-2d",
+    "_name": "launch",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_native": "",
@@ -11,7 +11,7 @@
   },
   {
     "__type__": "cc.Scene",
-    "_name": "app-2d",
+    "_name": "launch",
     "_objFlags": 0,
     "__editorExtras__": {},
     "_parent": null,
@@ -79,6 +79,9 @@
       },
       {
         "__id__": 7
+      },
+      {
+        "__id__": 17
       }
     ],
     "_prefab": null,
@@ -445,5 +448,17 @@
   {
     "__type__": "cc.PostSettingsInfo",
     "_toneMappingType": 0
+  },
+  {
+    "__type__": "9c181uzLdpMOJSJNTI/KVgO",
+    "_name": "",
+    "_objFlags": 0,
+    "__editorExtras__": {},
+    "node": {
+      "__id__": 2
+    },
+    "_enabled": true,
+    "__prefab": null,
+    "_id": "f2R1GpTkxKJ5cOxs4Xuw7P"
   }
 ]
