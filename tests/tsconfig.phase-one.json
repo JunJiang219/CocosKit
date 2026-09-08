@@ -14,6 +14,7 @@
     "../assets/main/scripts/BundleCatalog.ts",
     "../assets/main/scripts/LaunchPipeline.ts",
     "../assets/bundles/kit-core/scripts/assets/AssetLoadOptions.ts",
+    "../assets/bundles/kit-core/scripts/assets/AssetReleaseStrategy.ts",
     "../assets/bundles/kit-core/scripts/contracts/CoreContracts.ts",
     "../assets/bundles/kit-core/scripts/event/EventBus.ts",
     "../assets/bundles/kit-core/scripts/module/ModuleManager.ts",

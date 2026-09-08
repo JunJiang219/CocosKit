@@ -1,6 +1,7 @@
 import { BundleCatalog } from '../../assets/main/scripts/BundleCatalog';
 import { LaunchPipeline } from '../../assets/main/scripts/LaunchPipeline';
 import { createAssetLoadProgress } from '../../assets/bundles/kit-core/scripts/assets/AssetLoadOptions';
+import { DelayedAssetReleaseStrategy } from '../../assets/bundles/kit-core/scripts/assets/AssetReleaseStrategy';
 import {
     FrameworkModule,
     ModuleContext,
@@ -125,6 +126,32 @@ async function testAssetProgressNormalization(): Promise<void> {
     assert(byteProgress.unit === 'bytes', '远程下载应保留字节单位');
 }
 
+async function testDelayedAssetRelease(): Promise<void> {
+    const state = { released: false };
+    const strategy = new DelayedAssetReleaseStrategy(20);
+    strategy.schedule(() => {
+        state.released = true;
+    });
+
+    assert(!state.released, '延迟时间到达前不应释放资源');
+
+    await new Promise<void>((resolve) => setTimeout(resolve, 30));
+    assert(state.released, '延迟时间到达后应释放资源');
+}
+
+async function testPendingReleaseCanCompleteImmediately(): Promise<void> {
+    const state = { releaseCount: 0 };
+    const strategy = new DelayedAssetReleaseStrategy(1000);
+    const task = strategy.schedule(() => {
+        state.releaseCount += 1;
+    });
+
+    assert(task, '延时策略应返回可管理的释放任务');
+    task.flush();
+    task.flush();
+    assert(state.releaseCount === 1, '提前执行和重复执行都只能释放一次');
+}
+
 /** 不依赖测试框架的最小集成测试入口。 */
 async function run(): Promise<void> {
     await testBundleOrder();
@@ -133,6 +160,8 @@ async function run(): Promise<void> {
     await testLaunchPipelineRetry();
     await testFlowStateSurvivesSceneDisposal();
     await testAssetProgressNormalization();
+    await testDelayedAssetRelease();
+    await testPendingReleaseCanCompleteImmediately();
     console.info('phase-one integration tests passed');
 }
 

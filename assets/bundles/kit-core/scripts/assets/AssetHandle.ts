@@ -1,4 +1,4 @@
-import { Asset } from 'cc';
+import type { Asset } from 'cc';
 
 export type AssetReleaseCallback<T extends Asset> = (handle: AssetHandle<T>) => void;
 
@@ -13,7 +13,7 @@ export class AssetHandle<T extends Asset> {
         this.asset.addRef();
     }
 
-    /** 释放当前调用方持有的资源引用。 */
+    /** 立即释放当前调用方持有的资源引用。 */
     public release(): void {
         if (this.released) {
             return;

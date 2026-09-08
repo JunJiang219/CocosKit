@@ -1,5 +1,10 @@
 import { Asset, AssetManager, assetManager } from 'cc';
 import { AssetHandle } from './AssetHandle';
+import { IMMEDIATE_ASSET_RELEASE } from './AssetReleaseStrategy';
+import type {
+    AssetReleaseStrategy,
+    AssetReleaseTask,
+} from './AssetReleaseStrategy';
 import {
     AssetLoadOptions,
     AssetLoadProgressCallback,
@@ -22,6 +27,7 @@ interface ItemProgressReporter {
  */
 export class AssetService {
     private readonly scopedHandles = new Map<string, Set<AssetHandle<Asset>>>();
+    private readonly pendingReleaseTasks = new Set<AssetReleaseTask>();
 
     /** 加载单个 Bundle 资源；路径不带扩展名。 */
     public async load<T extends Asset>(
@@ -161,19 +167,34 @@ export class AssetService {
         return this.createHandle(asset, this.getScope(options));
     }
 
-    /** 释放一个作用域内的全部句柄。 */
-    public releaseScope(scope: string): void {
+    /** 按指定策略释放单个句柄，默认立即释放。 */
+    public release<T extends Asset>(
+        handle: AssetHandle<T>,
+        strategy: AssetReleaseStrategy = IMMEDIATE_ASSET_RELEASE,
+    ): void {
+        this.scheduleRelease([handle], strategy);
+    }
+
+    /** 按指定策略释放一个作用域内的全部句柄，默认立即释放。 */
+    public releaseScope(
+        scope: string,
+        strategy: AssetReleaseStrategy = IMMEDIATE_ASSET_RELEASE,
+    ): void {
         const handles = this.scopedHandles.get(scope);
         if (!handles) {
             return;
         }
-        [...handles].forEach((handle) => handle.release());
+
+        // 先移除旧作用域，避免等待期间新加载的资源被一并释放。
         this.scopedHandles.delete(scope);
+        this.scheduleRelease([...handles], strategy);
     }
 
-    /** 框架销毁时释放全部显式引用。 */
+    /** 框架销毁时立即释放全部显式引用和待释放资源。 */
     public releaseAll(): void {
         [...this.scopedHandles.keys()].forEach((scope) => this.releaseScope(scope));
+        [...this.pendingReleaseTasks].forEach((task) => task.flush());
+        this.pendingReleaseTasks.clear();
     }
 
     private requireBundle(name: string): AssetManager.Bundle {
@@ -247,6 +268,35 @@ export class AssetService {
 
     private createLoadError(target: string, error: Error): Error {
         return new Error(`资源加载失败：${target}，${error.message}`);
+    }
+
+    private scheduleRelease(
+        handles: readonly AssetHandle<Asset>[],
+        strategy: AssetReleaseStrategy,
+    ): void {
+        let task: AssetReleaseTask | null = null;
+        let completed = false;
+        const release = (): void => {
+            if (completed) {
+                return;
+            }
+            completed = true;
+            handles.forEach((handle) => handle.release());
+            if (task) {
+                this.pendingReleaseTasks.delete(task);
+            }
+        };
+
+        try {
+            task = strategy.schedule(release);
+            if (task && !completed) {
+                this.pendingReleaseTasks.add(task);
+            }
+        } catch (error) {
+            // 自定义策略异常时回退到立即释放，避免资源引用永久遗留。
+            console.error('[AssetService] 资源释放策略执行失败，已立即释放资源', error);
+            release();
+        }
     }
 
     private track<T extends Asset>(scope: string, handle: AssetHandle<T>): void {
