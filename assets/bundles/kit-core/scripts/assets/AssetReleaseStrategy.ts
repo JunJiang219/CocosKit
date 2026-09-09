@@ -7,6 +7,7 @@ export interface AssetReleaseTask {
 /**
  * 资源释放策略。
  * 新策略只需决定何时调用 release，无需了解资源和作用域的内部结构。
+ * 一个策略实例可以反复复用，每次调用会生成独立释放任务。
  */
 export interface AssetReleaseStrategy {
     schedule(release: () => void): AssetReleaseTask | null;
@@ -22,7 +23,7 @@ export class ImmediateAssetReleaseStrategy implements AssetReleaseStrategy {
 
 /** 延时策略：在指定毫秒数后释放。 */
 export class DelayedAssetReleaseStrategy implements AssetReleaseStrategy {
-    public constructor(private readonly delayMs: number) {}
+    public constructor(private readonly delayMs: number) { }
 
     public schedule(release: () => void): AssetReleaseTask | null {
         if (!Number.isFinite(this.delayMs) || this.delayMs <= 0) {

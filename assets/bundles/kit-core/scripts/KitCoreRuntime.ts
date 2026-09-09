@@ -56,7 +56,7 @@ export class KitCoreRuntime implements KitCoreFacade {
         this.logger.info('通用模块已释放');
     }
 
-    /** 供后续模块内部使用的资源服务入口。 */
+    /** 通过门面对外提供受控的资源服务能力。 */
     public get assets(): AssetService {
         return this.services.resolve<AssetService>(KIT_SERVICE_KEYS.assets);
     }
