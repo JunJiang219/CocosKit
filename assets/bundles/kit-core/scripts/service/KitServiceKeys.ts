@@ -2,4 +2,10 @@
 export const KIT_SERVICE_KEYS = Object.freeze({
     assets: 'kit.assets',
     scenes: 'kit.scenes',
+    ui: 'kit.ui',
+    data: 'kit.data',
+    storage: 'kit.storage',
+    audio: 'kit.audio',
+    network: 'kit.network',
+    platform: 'kit.platform',
 });

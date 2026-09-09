@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "rootDir": "..",
+    "outDir": "../temp/phase-two-tests"
+  },
+  "include": [
+    "integration/phase-two.test.ts",
+    "../assets/bundles/kit-core/scripts/network/NetworkService.ts",
+    "../assets/bundles/kit-core/scripts/platform/PlatformService.ts",
+    "../assets/bundles/kit-core/scripts/storage/StorageService.ts"
+  ]
+}

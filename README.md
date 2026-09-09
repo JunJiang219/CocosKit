@@ -24,3 +24,16 @@ flowchart LR
 ```
 
 使用 Cocos Creator 打开项目后，预览 `assets/main/scenes/launch.scene`。示例场景会显示蓝色背景，并在两秒后自动返回启动场景；时间和 Bundle 名称集中配置在 `assets/main/scripts/Environment.ts`。
+
+## 阶段二：常规游戏能力
+
+当前已接入统一门面：
+
+- `core.ui`：Prefab 路由、七层 UI、返回栈和缓存。
+- `core.data`：JSON 配置加载、主键索引和运行时覆盖。
+- `core.storage`：环境/账号分区、数据版本和迁移。
+- `core.audio`：BGM、音效、音量、静音和资源释放。
+- `core.network`：HTTP/JSON、超时、重试及 WebSocket 断线重连。
+- `core.platform`：Web Mobile 能力检测与可替换平台适配器。
+
+`game-core/scripts/sample/SampleGameFlow.ts` 提供登录、大厅、设置和断线恢复的最小业务串联。真实 UI Prefab、服务器地址和协议字段由具体项目配置接入，不写死在通用模块中。
