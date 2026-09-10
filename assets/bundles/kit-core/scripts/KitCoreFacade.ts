@@ -14,7 +14,13 @@ export type KitAssetsFacade = Pick<
 
 export type KitUIFacade = Pick<
     UIService,
-    'bindRoot' | 'register' | 'open' | 'close' | 'back'
+    | 'bindRoot'
+    | 'registerMany'
+    | 'setDefaultTransition'
+    | 'clearDefaultTransition'
+    | 'open'
+    | 'close'
+    | 'back'
 >;
 
 export type KitDataFacade = Pick<

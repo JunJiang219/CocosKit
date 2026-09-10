@@ -29,11 +29,13 @@ flowchart LR
 
 当前已接入统一门面：
 
-- `core.ui`：Prefab 路由、七层 UI、返回栈和缓存。
+- `core.ui`：Prefab 路由、七层 UI、返回栈、缓存，以及 Animation 或缩放/透明度 Tween 开关动画策略。
 - `core.data`：JSON 配置加载、主键索引和运行时覆盖。
 - `core.storage`：环境/账号分区、数据版本和迁移。
 - `core.audio`：BGM、音效、音量、静音和资源释放。
 - `core.network`：HTTP/JSON、超时、重试及 WebSocket 断线重连。
 - `core.platform`：Web Mobile 能力检测与可替换平台适配器。
+
+UI 路由支持通过 `registerMany()` 集中注册，并可按层级设置共享动画预设；单个路由只有在需要特殊表现时才覆盖自己的动画策略。
 
 `game-core/scripts/sample/SampleGameFlow.ts` 提供登录、大厅、设置和断线恢复的最小业务串联。真实 UI Prefab、服务器地址和协议字段由具体项目配置接入，不写死在通用模块中。
