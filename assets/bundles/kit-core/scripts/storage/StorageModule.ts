@@ -1,6 +1,7 @@
 import type { FrameworkModule, ModuleContext } from '../contracts/CoreContracts';
 import { KIT_SERVICE_KEYS } from '../service/KitServiceKeys';
-import { StorageService, createDefaultStorage } from './StorageService';
+import { createDefaultStorage } from './EngineStorageAdapter';
+import { StorageService } from './StorageService';
 
 /** 注册本地存储服务。 */
 export class StorageModule implements FrameworkModule {

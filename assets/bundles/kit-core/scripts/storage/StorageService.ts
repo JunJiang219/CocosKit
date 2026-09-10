@@ -17,7 +17,7 @@ interface StorageEnvelope {
     readonly value: unknown;
 }
 
-/** 内存实现用于测试，以及浏览器存储不可用时的安全回退。 */
+/** 内存实现用于测试，也可供不支持持久化的平台临时回退。 */
 export class MemoryStorage implements KeyValueStorage {
     private readonly values = new Map<string, string>();
 
@@ -104,16 +104,4 @@ export class StorageService {
         this.partitions.set(normalized, created);
         return created;
     }
-}
-
-/** Web Mobile 默认使用 localStorage，不可用时回退到内存。 */
-export function createDefaultStorage(): KeyValueStorage {
-    try {
-        if (globalThis.localStorage) {
-            return globalThis.localStorage;
-        }
-    } catch {
-        // 隐私模式或宿主限制可能禁止访问 localStorage。
-    }
-    return new MemoryStorage();
 }
