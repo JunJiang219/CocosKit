@@ -6,7 +6,11 @@ import { ModuleContext } from './contracts/CoreContracts';
 import { DataModule } from './data/DataModule';
 import { DataService } from './data/DataService';
 import { EventBus } from './event/EventBus';
+import { I18nModule } from './i18n/I18nModule';
+import { I18nService } from './i18n/I18nService';
 import { KitCoreFacade } from './KitCoreFacade';
+import { LifecycleModule } from './lifecycle/LifecycleModule';
+import { LifecycleService } from './lifecycle/LifecycleService';
 import { Logger } from './log/Logger';
 import { ModuleManager } from './module/ModuleManager';
 import { NetworkModule } from './network/NetworkModule';
@@ -37,11 +41,13 @@ export class KitCoreRuntime implements KitCoreFacade {
             logger: this.logger,
         };
         this.modules = new ModuleManager(context);
+        this.modules.add(new LifecycleModule());
         this.modules.add(new AssetsModule());
         this.modules.add(new SceneModule());
         this.modules.add(new UIModule());
         this.modules.add(new DataModule());
         this.modules.add(new StorageModule());
+        this.modules.add(new I18nModule());
         this.modules.add(new AudioModule());
         this.modules.add(new NetworkModule());
         this.modules.add(new PlatformModule());
@@ -50,6 +56,10 @@ export class KitCoreRuntime implements KitCoreFacade {
     /** 暴露场景门面，不暴露服务容器本身。 */
     public get scenes(): SceneService {
         return this.services.resolve<SceneService>(KIT_SERVICE_KEYS.scenes);
+    }
+
+    public get lifecycle(): LifecycleService {
+        return this.services.resolve<LifecycleService>(KIT_SERVICE_KEYS.lifecycle);
     }
 
     /** 启动全部内核模块，重复调用不会重复注册。 */
@@ -89,6 +99,10 @@ export class KitCoreRuntime implements KitCoreFacade {
 
     public get storage(): StorageService {
         return this.services.resolve<StorageService>(KIT_SERVICE_KEYS.storage);
+    }
+
+    public get i18n(): I18nService {
+        return this.services.resolve<I18nService>(KIT_SERVICE_KEYS.i18n);
     }
 
     public get audio(): AudioService {

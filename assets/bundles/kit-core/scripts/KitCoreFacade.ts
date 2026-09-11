@@ -1,6 +1,8 @@
 import type { AssetService } from './assets/AssetService';
 import type { AudioService } from './audio/AudioService';
 import type { DataService } from './data/DataService';
+import type { I18nService } from './i18n/I18nService';
+import type { LifecycleService } from './lifecycle/LifecycleService';
 import type { NetworkService } from './network/NetworkService';
 import type { PlatformService } from './platform/PlatformService';
 import type { StorageService } from './storage/StorageService';
@@ -30,6 +32,27 @@ export type KitDataFacade = Pick<
 
 export type KitStorageFacade = Pick<StorageService, 'partition'>;
 
+export type KitLifecycleFacade = Pick<
+    LifecycleService,
+    'state' | 'isActive' | 'onStateChange' | 'onBeforeSceneChange' | 'onAfterSceneChange'
+>;
+
+export type KitI18nFacade = Pick<
+    I18nService,
+    | 'locale'
+    | 'fallbackLocale'
+    | 'availableLocales'
+    | 'loadLocale'
+    | 'registerLocale'
+    | 'setLocale'
+    | 'setFallbackLocale'
+    | 'onLocaleChange'
+    | 'has'
+    | 't'
+    | 'plural'
+    | 'unloadLocale'
+>;
+
 export type KitAudioFacade = Pick<
     AudioService,
     | 'playMusic'
@@ -53,9 +76,11 @@ export type KitPlatformFacade = Pick<
 /** kit-core 对启动层和业务层公开的统一门面。 */
 export interface KitCoreFacade {
     readonly assets: KitAssetsFacade;
+    readonly lifecycle: KitLifecycleFacade;
     readonly ui: KitUIFacade;
     readonly data: KitDataFacade;
     readonly storage: KitStorageFacade;
+    readonly i18n: KitI18nFacade;
     readonly audio: KitAudioFacade;
     readonly network: KitNetworkFacade;
     readonly platform: KitPlatformFacade;

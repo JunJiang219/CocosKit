@@ -1,12 +1,13 @@
+import { sys } from 'cc';
 import type { FrameworkModule, ModuleContext } from '../contracts/CoreContracts';
 import { KIT_SERVICE_KEYS } from '../service/KitServiceKeys';
-import { createDefaultStorage } from './EngineStorageAdapter';
 import { StorageService } from './StorageService';
 
 /** 注册本地存储服务。 */
 export class StorageModule implements FrameworkModule {
     public readonly name = 'storage';
-    private readonly service = new StorageService(createDefaultStorage());
+    // 默认使用 Creator 的跨平台本地存储实现。
+    private readonly service = new StorageService(sys.localStorage);
 
     public register(context: ModuleContext): void {
         context.services.register(KIT_SERVICE_KEYS.storage, this.service);

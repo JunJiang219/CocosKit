@@ -13,6 +13,8 @@
     "integration/phase-two.test.ts",
     "../assets/bundles/kit-core/scripts/network/NetworkService.ts",
     "../assets/bundles/kit-core/scripts/platform/PlatformService.ts",
-    "../assets/bundles/kit-core/scripts/storage/StorageService.ts"
+    "../assets/bundles/kit-core/scripts/storage/StorageService.ts",
+    "../assets/bundles/kit-core/scripts/lifecycle/LifecycleService.ts",
+    "../assets/bundles/kit-core/scripts/i18n/I18nService.ts"
   ]
 }

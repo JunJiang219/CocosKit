@@ -13,6 +13,7 @@ export class AudioService {
     private musicVolume = 1;
     private effectVolume = 1;
     private muted = false;
+    private resumeMusicAfterPause = false;
 
     public constructor(private readonly assets: AssetService) {}
 
@@ -65,6 +66,7 @@ export class AudioService {
     }
 
     public stopMusic(): void {
+        this.resumeMusicAfterPause = false;
         this.musicSource?.stop();
         if (this.musicSource) {
             this.musicSource.clip = null;
@@ -90,7 +92,24 @@ export class AudioService {
         this.updateVolumes();
     }
 
+    /** 仅记录并暂停当前正在播放的 BGM，前台恢复时不会误启动已停止音乐。 */
+    public pause(): void {
+        this.resumeMusicAfterPause = this.musicSource?.playing ?? false;
+        if (this.resumeMusicAfterPause) {
+            this.musicSource?.pause();
+        }
+    }
+
+    public resume(): void {
+        if (!this.resumeMusicAfterPause || !this.musicSource?.clip) {
+            return;
+        }
+        this.resumeMusicAfterPause = false;
+        this.musicSource.play();
+    }
+
     public dispose(): void {
+        this.resumeMusicAfterPause = false;
         this.musicRequestId += 1;
         this.stopMusic();
         if (this.root) {

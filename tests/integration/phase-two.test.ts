@@ -14,6 +14,8 @@ import {
     MemoryStorage,
     StorageService,
 } from '../../assets/bundles/kit-core/scripts/storage/StorageService';
+import { I18nService } from '../../assets/bundles/kit-core/scripts/i18n/I18nService';
+import { LifecycleService } from '../../assets/bundles/kit-core/scripts/lifecycle/LifecycleService';
 
 function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {
@@ -152,11 +154,61 @@ async function testPlatformAdapterReplacement(): Promise<void> {
     assert(adapter.copiedText === 'CocosKit', '平台调用应转发给当前适配器');
 }
 
+function testLifecycleNotifications(): void {
+    const lifecycle = new LifecycleService();
+    const states: string[] = [];
+    const sceneResults: boolean[] = [];
+    lifecycle.onStateChange(({ current }) => states.push(current));
+    lifecycle.onAfterSceneChange(({ success }) => sceneResults.push(success));
+
+    lifecycle.setAppState('background');
+    lifecycle.setAppState('background');
+    lifecycle.setAppState('active');
+    lifecycle.notifyAfterSceneChange({
+        target: { source: 'main', sceneName: 'launch' },
+        success: true,
+    });
+
+    assert(states.join(',') === 'background,active', '相同前后台状态不应重复派发');
+    assert(sceneResults.length === 1 && sceneResults[0], '场景切换结果应正常派发');
+}
+
+function testI18nTranslationAndFallback(): void {
+    const missingKeys: string[] = [];
+    const i18n = new I18nService({
+        initialLocale: 'zh_CN',
+        fallbackLocale: 'en',
+        onMissingKey: (_locale, key) => missingKeys.push(key),
+    });
+    i18n.registerLocale('zh', {
+        greeting: '你好，{name}',
+    });
+    i18n.registerLocale('en', {
+        common: { confirm: 'Confirm' },
+        apples: {
+            one: '{count} apple',
+            other: '{count} apples',
+        },
+    });
+
+    assert(i18n.locale === 'zh-CN', '语言代码应统一格式');
+    assert(i18n.t('greeting', { name: 'CocosKit' }) === '你好，CocosKit', '应使用基础语言并替换参数');
+    assert(i18n.t('common.confirm') === 'Confirm', '当前语言缺失时应读取回退语言');
+
+    i18n.setLocale('en-US');
+    assert(i18n.plural('apples', 1) === '1 apple', '单数应读取 one 文案');
+    assert(i18n.plural('apples', 2) === '2 apples', '复数应读取 other 文案');
+    assert(i18n.t('missing.key') === 'missing.key', '全部语言缺失时应返回原始 key');
+    assert(missingKeys.length === 1, '缺失键应被报告');
+}
+
 async function run(): Promise<void> {
     await testStoragePartitionAndMigration();
     await testHttpRetryAndUrlResolution();
     await testSocketReconnect();
     await testPlatformAdapterReplacement();
+    testLifecycleNotifications();
+    testI18nTranslationAndFallback();
     console.info('phase-two integration tests passed');
 }
 

@@ -1,9 +1,13 @@
 import { AssetManager, SceneAsset, assetManager, director } from 'cc';
 import { ILogger } from '../contracts/CoreContracts';
+import { LifecycleService, SceneChangeTarget } from '../lifecycle/LifecycleService';
 
 /** 统一处理主包场景和 Bundle 场景切换。 */
 export class SceneService {
-    public constructor(private readonly logger: ILogger) {}
+    public constructor(
+        private readonly logger: ILogger,
+        private readonly lifecycle: LifecycleService,
+    ) {}
 
     /** 加载 Bundle 内场景并运行。场景路径不带扩展名。 */
     public async enterBundleScene(bundleName: string, scenePath: string): Promise<void> {
@@ -12,27 +16,51 @@ export class SceneService {
             throw new Error(`场景所在 Bundle 尚未加载：${bundleName}`);
         }
 
-        this.logger.info(`进入 Bundle 场景：${bundleName}/${scenePath}`);
-        const scene = await this.loadBundleScene(bundle, scenePath);
-        await this.runScene(scene);
+        const target: SceneChangeTarget = {
+            source: 'bundle',
+            bundleName,
+            sceneName: scenePath,
+        };
+        await this.changeScene(target, async () => {
+            this.logger.info(`进入 Bundle 场景：${bundleName}/${scenePath}`);
+            const scene = await this.loadBundleScene(bundle, scenePath);
+            await this.runScene(scene);
+        });
     }
 
     /** 使用主包场景名返回启动流程。 */
     public enterMainScene(sceneName: string): Promise<void> {
-        this.logger.info(`进入主包场景：${sceneName}`);
-        return new Promise((resolve, reject) => {
-            const accepted = director.loadScene(sceneName, (error) => {
-                if (error) {
-                    reject(error);
-                    return;
-                }
-                resolve();
-            });
+        const target: SceneChangeTarget = {
+            source: 'main',
+            sceneName,
+        };
+        return this.changeScene(target, () => {
+            this.logger.info(`进入主包场景：${sceneName}`);
+            return new Promise((resolve, reject) => {
+                const accepted = director.loadScene(sceneName, (error) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve();
+                });
 
-            if (!accepted) {
-                reject(new Error(`场景切换请求被拒绝：${sceneName}`));
-            }
+                if (!accepted) {
+                    reject(new Error(`场景切换请求被拒绝：${sceneName}`));
+                }
+            });
         });
+    }
+
+    private async changeScene(target: SceneChangeTarget, action: () => Promise<void>): Promise<void> {
+        this.lifecycle.notifyBeforeSceneChange(target);
+        try {
+            await action();
+            this.lifecycle.notifyAfterSceneChange({ target, success: true });
+        } catch (error) {
+            this.lifecycle.notifyAfterSceneChange({ target, success: false, error });
+            throw error;
+        }
     }
 
     private loadBundleScene(

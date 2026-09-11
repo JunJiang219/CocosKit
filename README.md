@@ -35,7 +35,11 @@ flowchart LR
 - `core.audio`：BGM、音效、音量、静音和资源释放。
 - `core.network`：HTTP/JSON、超时、重试及 WebSocket 断线重连。
 - `core.platform`：Web Mobile 能力检测与可替换平台适配器。
+- `core.lifecycle`：前后台状态，以及场景切换前后通知；BGM 会随前后台自动暂停和恢复。
+- `core.i18n`：JSON/内存语言包、语言回退、参数插值、基础复数形式和语言切换通知。
 
 UI 路由支持通过 `registerMany()` 集中注册，并可按层级设置共享动画预设；单个路由只有在需要特殊表现时才覆盖自己的动画策略。
 
 `game-core/scripts/sample/SampleGameFlow.ts` 提供登录、大厅、设置和断线恢复的最小业务串联。真实 UI Prefab、服务器地址和协议字段由具体项目配置接入，不写死在通用模块中。
+
+当前 i18n 首版聚焦文本能力；本地化图片、字体和音频待项目出现真实资源后，再基于资源键扩展，避免提前固定资源组织方式。
